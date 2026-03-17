@@ -1,0 +1,736 @@
+/* ========================================
+   Admin Access Page Styles
+   ======================================== */
+.admin-access-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-8);
+    position: relative;
+    overflow: hidden;
+    background: #0a0a0f;
+}
+
+/* Animated Background */
+.admin-access-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+}
+
+.admin-access-glow {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(140px);
+    animation: adminGlowPulse 6s ease-in-out infinite alternate;
+}
+
+.admin-access-glow-1 {
+    width: 600px;
+    height: 600px;
+    background: rgba(245, 158, 11, 0.2);
+    top: -250px;
+    right: -150px;
+}
+
+.admin-access-glow-2 {
+    width: 500px;
+    height: 500px;
+    background: rgba(234, 88, 12, 0.15);
+    bottom: -150px;
+    left: -150px;
+    animation-delay: 3s;
+}
+
+.admin-access-glow-3 {
+    width: 300px;
+    height: 300px;
+    background: rgba(139, 92, 246, 0.12);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    animation-delay: 1.5s;
+}
+
+@keyframes adminGlowPulse {
+    0% {
+        opacity: 0.4;
+        transform: scale(1);
+    }
+
+    100% {
+        opacity: 0.7;
+        transform: scale(1.15);
+    }
+}
+
+/* Grid Pattern Overlay */
+.admin-access-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(245, 158, 11, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(245, 158, 11, 0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, black 20%, transparent 70%);
+    -webkit-mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, black 20%, transparent 70%);
+}
+
+/* Floating Particles */
+.admin-access-particles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.admin-particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: rgba(245, 158, 11, 0.4);
+    border-radius: 50%;
+    animation: particleFloat 8s ease-in-out infinite;
+}
+
+.admin-particle:nth-child(1) {
+    top: 15%;
+    left: 10%;
+    animation-delay: 0s;
+}
+
+.admin-particle:nth-child(2) {
+    top: 25%;
+    left: 85%;
+    animation-delay: 1.5s;
+}
+
+.admin-particle:nth-child(3) {
+    top: 70%;
+    left: 20%;
+    animation-delay: 3s;
+}
+
+.admin-particle:nth-child(4) {
+    top: 80%;
+    left: 75%;
+    animation-delay: 4.5s;
+}
+
+.admin-particle:nth-child(5) {
+    top: 40%;
+    left: 50%;
+    animation-delay: 2s;
+}
+
+.admin-particle:nth-child(6) {
+    top: 55%;
+    left: 90%;
+    animation-delay: 5s;
+}
+
+@keyframes particleFloat {
+
+    0%,
+    100% {
+        transform: translateY(0) translateX(0);
+        opacity: 0.3;
+    }
+
+    25% {
+        transform: translateY(-20px) translateX(10px);
+        opacity: 0.7;
+    }
+
+    50% {
+        transform: translateY(-10px) translateX(-15px);
+        opacity: 0.5;
+    }
+
+    75% {
+        transform: translateY(-25px) translateX(5px);
+        opacity: 0.8;
+    }
+}
+
+/* Main Container */
+.admin-access-container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 480px;
+    animation: adminFadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes adminFadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Logo Section */
+.admin-access-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-3);
+    color: var(--text-primary);
+    font-weight: 700;
+    font-size: var(--text-xl);
+    text-decoration: none;
+    margin-bottom: var(--spacing-10);
+    transition: all var(--transition-fast);
+}
+
+.admin-access-logo:hover {
+    transform: scale(1.02);
+}
+
+.admin-access-logo-icon {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    border-radius: var(--radius-lg);
+    color: #0a0a0f;
+    box-shadow: 0 4px 20px rgba(245, 158, 11, 0.35);
+    position: relative;
+}
+
+.admin-access-logo-icon::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: calc(var(--radius-lg) + 2px);
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.5), rgba(234, 88, 12, 0.5));
+    z-index: -1;
+    filter: blur(6px);
+    opacity: 0.6;
+}
+
+.admin-access-logo-icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+/* Card */
+.admin-access-card {
+    background: rgba(17, 17, 27, 0.85);
+    border: 1px solid rgba(245, 158, 11, 0.15);
+    border-radius: var(--radius-2xl);
+    padding: var(--spacing-10);
+    backdrop-filter: blur(24px);
+    position: relative;
+    overflow: hidden;
+    box-shadow:
+        0 0 0 1px rgba(245, 158, 11, 0.05),
+        0 20px 60px rgba(0, 0, 0, 0.5),
+        0 0 80px rgba(245, 158, 11, 0.05);
+}
+
+.admin-access-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #f59e0b, #d97706, transparent);
+    border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+}
+
+/* Shield Icon */
+.admin-access-shield {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: var(--spacing-6);
+}
+
+.admin-access-shield-icon {
+    width: 72px;
+    height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(234, 88, 12, 0.08));
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    border-radius: 50%;
+    font-size: 2rem;
+    position: relative;
+    animation: shieldPulse 3s ease-in-out infinite;
+}
+
+.admin-access-shield-icon::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 1px solid rgba(245, 158, 11, 0.1);
+    animation: shieldRing 3s ease-in-out infinite;
+}
+
+@keyframes shieldPulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.1);
+    }
+
+    50% {
+        box-shadow: 0 0 20px 5px rgba(245, 158, 11, 0.15);
+    }
+}
+
+@keyframes shieldRing {
+
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 0.5;
+    }
+
+    50% {
+        transform: scale(1.1);
+        opacity: 0.3;
+    }
+}
+
+/* Header */
+.admin-access-header {
+    text-align: center;
+    margin-bottom: var(--spacing-8);
+}
+
+.admin-access-title {
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    margin-bottom: var(--spacing-2);
+    background: linear-gradient(135deg, #f59e0b, #fbbf24);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.admin-access-subtitle {
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    line-height: 1.5;
+}
+
+/* Security Badge */
+.admin-access-security-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    padding: var(--spacing-2) var(--spacing-4);
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.15);
+    border-radius: var(--radius-full);
+    font-size: 11px;
+    font-weight: 600;
+    color: #f59e0b;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: var(--spacing-3);
+}
+
+/* Error */
+.admin-access-error {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-3);
+    padding: var(--spacing-4);
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: var(--radius-lg);
+    color: #f87171;
+    font-size: var(--text-sm);
+    margin-bottom: var(--spacing-6);
+    animation: adminFadeUp 0.3s ease;
+}
+
+.admin-access-error svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+/* Form */
+.admin-access-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-5);
+}
+
+.admin-access-form .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2);
+}
+
+.admin-access-form .form-label {
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+}
+
+.admin-access-form .form-label-icon {
+    font-size: 14px;
+    opacity: 0.7;
+}
+
+.admin-access-form .admin-input {
+    width: 100%;
+    padding: var(--spacing-3) var(--spacing-4);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(245, 158, 11, 0.12);
+    border-radius: var(--radius-lg);
+    color: var(--text-primary);
+    font-size: var(--text-sm);
+    transition: all var(--transition-fast);
+}
+
+.admin-access-form .admin-input:focus {
+    border-color: rgba(245, 158, 11, 0.5);
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+    background: rgba(255, 255, 255, 0.06);
+    outline: none;
+}
+
+.admin-access-form .admin-input::placeholder {
+    color: var(--text-muted);
+}
+
+/* Password Wrapper */
+.admin-input-password {
+    position: relative;
+}
+
+.admin-input-password .admin-input {
+    padding-right: 48px;
+}
+
+.admin-password-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: rgba(245, 158, 11, 0.5);
+    cursor: pointer;
+    padding: var(--spacing-1);
+    transition: color var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.admin-password-toggle:hover {
+    color: #f59e0b;
+}
+
+.admin-password-toggle svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Submit Button */
+.admin-access-submit {
+    width: 100%;
+    margin-top: var(--spacing-3);
+    padding: var(--spacing-4) var(--spacing-8);
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #0a0a0f;
+    font-size: var(--text-base);
+    font-weight: 700;
+    border: none;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-2);
+    letter-spacing: 0.3px;
+    box-shadow: 0 4px 20px rgba(245, 158, 11, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.admin-access-submit::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.admin-access-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(245, 158, 11, 0.4);
+}
+
+.admin-access-submit:hover::before {
+    opacity: 1;
+}
+
+.admin-access-submit:active {
+    transform: translateY(0);
+}
+
+.admin-access-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.admin-access-submit span {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+}
+
+/* Loading Spinner */
+.admin-access-spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(10, 10, 15, 0.3);
+    border-top-color: #0a0a0f;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    position: relative;
+    z-index: 1;
+}
+
+/* Back Link */
+.admin-access-back {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-2);
+    margin-top: var(--spacing-6);
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+}
+
+.admin-access-back:hover {
+    color: #f59e0b;
+}
+
+.admin-access-back svg {
+    width: 16px;
+    height: 16px;
+    transition: transform var(--transition-fast);
+}
+
+.admin-access-back:hover svg {
+    transform: translateX(-3px);
+}
+
+/* Auth Info Section */
+.admin-access-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-4);
+    margin-top: var(--spacing-6);
+    padding-top: var(--spacing-6);
+    border-top: 1px solid rgba(245, 158, 11, 0.1);
+}
+
+.admin-access-info-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-3);
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+}
+
+.admin-access-info-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(245, 158, 11, 0.06);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+/* Already Logged In State */
+.admin-access-logged-in {
+    text-align: center;
+}
+
+.admin-access-user-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-4);
+    margin-bottom: var(--spacing-6);
+}
+
+.admin-access-avatar {
+    width: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    border-radius: 50%;
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    color: #0a0a0f;
+    box-shadow: 0 4px 20px rgba(245, 158, 11, 0.3);
+}
+
+.admin-access-user-name {
+    font-size: var(--text-lg);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.admin-access-user-role {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    padding: var(--spacing-1) var(--spacing-3);
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.admin-access-user-role.role-admin {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(234, 88, 12, 0.15));
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.admin-access-user-role.role-user {
+    background: rgba(99, 102, 241, 0.12);
+    color: var(--primary-400);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+.admin-access-enter-btn {
+    width: 100%;
+    padding: var(--spacing-4) var(--spacing-8);
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #0a0a0f;
+    font-size: var(--text-base);
+    font-weight: 700;
+    border: none;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-2);
+    box-shadow: 0 4px 20px rgba(245, 158, 11, 0.3);
+    text-decoration: none;
+    margin-bottom: var(--spacing-4);
+}
+
+.admin-access-enter-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(245, 158, 11, 0.4);
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    color: #0a0a0f;
+}
+
+/* Denied State */
+.admin-access-denied {
+    text-align: center;
+}
+
+.admin-access-denied-icon {
+    width: 72px;
+    height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 50%;
+    font-size: 2rem;
+    margin: 0 auto var(--spacing-5);
+}
+
+.admin-access-denied h3 {
+    font-size: var(--text-lg);
+    font-weight: 600;
+    margin-bottom: var(--spacing-2);
+    color: #f87171;
+}
+
+.admin-access-denied p {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-6);
+    line-height: 1.6;
+}
+
+.admin-access-go-dashboard {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    padding: var(--spacing-3) var(--spacing-6);
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    color: var(--text-primary);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    text-decoration: none;
+    transition: all var(--transition-fast);
+}
+
+.admin-access-go-dashboard:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--primary-500);
+    transform: translateY(-1px);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .admin-access-page {
+        padding: var(--spacing-4);
+    }
+
+    .admin-access-card {
+        padding: var(--spacing-6);
+    }
+
+    .admin-access-title {
+        font-size: var(--text-xl);
+    }
+
+    .admin-access-shield-icon {
+        width: 60px;
+        height: 60px;
+        font-size: 1.6rem;
+    }
+}
