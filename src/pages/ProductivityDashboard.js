@@ -106,6 +106,78 @@ const ProductivityDashboard = () => {
                                 </div>
                             </div>
 
+                            {/* Team Progress Card */}
+                            <div className="dashboard-card progress-card fade-in">
+                                <div className="card-header">
+                                    <h2>Team Progress</h2>
+                                    <div className="badge-icon">📊</div>
+                                </div>
+                                {leaderboard.length === 0 ? (
+                                    <div className="empty-state">No progress data yet.</div>
+                                ) : (
+                                    <div className="team-progress-content">
+                                        {/* Overall Stats Summary */}
+                                        <div className="progress-stats-row">
+                                            <div className="progress-stat-box">
+                                                <span className="progress-stat-value">{leaderboard.reduce((sum, u) => sum + u.tasksCompleted, 0)}</span>
+                                                <span className="progress-stat-label">Total Tasks Done</span>
+                                            </div>
+                                            <div className="progress-stat-box">
+                                                <span className="progress-stat-value" style={{ color: '#10b981' }}>{leaderboard.reduce((sum, u) => sum + u.points, 0)}</span>
+                                                <span className="progress-stat-label">Total SP Earned</span>
+                                            </div>
+                                            <div className="progress-stat-box">
+                                                <span className="progress-stat-value" style={{ color: '#6366f1' }}>{leaderboard.length}</span>
+                                                <span className="progress-stat-label">Active Members</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Per-member progress bars */}
+                                        <div className="member-progress-list">
+                                            {(() => {
+                                                const maxPoints = Math.max(...leaderboard.map(u => u.points), 1);
+                                                return leaderboard.map((member, idx) => {
+                                                    const pct = Math.round((member.points / maxPoints) * 100);
+                                                    return (
+                                                        <div key={idx} className="member-progress-row">
+                                                            <div className="member-progress-info">
+                                                                {member.user?.avatar ? (
+                                                                    <img src={member.user.avatar} alt={member.user.name} className="mp-row-avatar" />
+                                                                ) : (
+                                                                    <div className="mp-row-avatar mp-row-avatar-init">
+                                                                        {member.user?.name?.charAt(0).toUpperCase() || 'U'}
+                                                                    </div>
+                                                                )}
+                                                                <span className="mp-row-name">{member.user?.name || 'Unknown'}</span>
+                                                            </div>
+                                                            <div className="member-progress-bar-wrapper">
+                                                                <div className="member-progress-track">
+                                                                    <div
+                                                                        className="member-progress-fill"
+                                                                        style={{
+                                                                            width: `${pct}%`,
+                                                                            background: idx === 0 ? 'linear-gradient(90deg, #f59e0b, #fbbf24)' :
+                                                                                idx === 1 ? 'linear-gradient(90deg, #94a3b8, #cbd5e1)' :
+                                                                                    idx === 2 ? 'linear-gradient(90deg, #ea580c, #fb923c)' :
+                                                                                        'linear-gradient(90deg, #6366f1, #818cf8)'
+                                                                        }}
+                                                                    ></div>
+                                                                </div>
+                                                                <span className="member-progress-pct">{pct}%</span>
+                                                            </div>
+                                                            <div className="member-progress-stats">
+                                                                <span className="mp-tasks">{member.tasksCompleted} tasks</span>
+                                                                <span className="mp-points">{member.points} SP</span>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                });
+                                            })()}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
                             <div className="dashboard-card calendar-card fade-in">
                                 <div className="card-header">
                                     <h2>Your Activity Heatmap</h2>

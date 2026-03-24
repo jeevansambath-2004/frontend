@@ -80,7 +80,30 @@ export const taskService = {
         const response = await api.get(`/tasks/team-progress/${projectId}`);
         return response.data;
     },
+
+    // Request stage change (member action)
+    requestStageChange: async (taskId, requestedStatus) => {
+        const response = await api.patch(`/tasks/${taskId}/request-stage-change`, { requestedStatus });
+        return response.data;
+    },
+
+    // Approve stage change (admin only)
+    approveStage: async (taskId) => {
+        const response = await api.patch(`/tasks/${taskId}/approve-stage`);
+        return response.data;
+    },
+
+    // Reject stage change (admin only)
+    rejectStage: async (taskId) => {
+        const response = await api.patch(`/tasks/${taskId}/reject-stage`);
+        return response.data;
+    },
+
+    // Get pending approvals for a project (admin only)
+    getPendingApprovals: async (projectId) => {
+        const response = await api.get(`/tasks/pending-approvals/${projectId}`);
+        return response.data;
+    },
 };
 
 export default taskService;
-

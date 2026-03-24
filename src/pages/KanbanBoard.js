@@ -13,6 +13,13 @@ const COLUMNS = [
     { id: 'done', title: 'Done', icon: '✅', color: '#22c55e' }
 ];
 
+const STATUS_LABELS = {
+    'todo': 'To Do',
+    'in-progress': 'In Progress',
+    'review': 'Review',
+    'done': 'Done'
+};
+
 const KanbanBoard = () => {
     const { user } = useAuth();
     const [tasks, setTasks] = useState([]);
@@ -26,6 +33,7 @@ const KanbanBoard = () => {
     const [saving, setSaving] = useState(false);
     const [projectRole, setProjectRole] = useState(null); // 'owner', 'admin', 'member', 'viewer'
     const [projectMembers, setProjectMembers] = useState([]);
+    const [pendingCount, setPendingCount] = useState(0);
     const [formData, setFormData] = useState({
         title: '',
         description: '',
@@ -62,6 +70,29 @@ const KanbanBoard = () => {
         };
         fetchRole();
     }, [selectedProject, user]);
+
+    // Count pending approvals for the selected project
+    useEffect(() => {
+        const fetchPendingCount = async () => {
+            if (isProjectAdmin && selectedProject && selectedProject !== 'all') {
+                try {
+                    const res = await taskService.getPendingApprovals(selectedProject);
+                    setPendingCount(res.count || 0);
+                } catch {
+                    setPendingCount(0);
+                }
+            } else {
+                // Count from local tasks for 'all' projects view
+                const pending = tasks.filter(t => t.approvalStatus === 'pending');
+                setPendingCount(pending.length);
+            }
+        };
+        if (isProjectAdmin) {
+            fetchPendingCount();
+        } else {
+            setPendingCount(0);
+        }
+    }, [selectedProject, isProjectAdmin, tasks]);
 
     // Load project members when the project selection in the modal form changes
     useEffect(() => {
@@ -107,6 +138,11 @@ const KanbanBoard = () => {
     }, [filteredTasks]);
 
     const handleDragStart = (e, task) => {
+        // Prevent dragging if task has pending approval (for members)
+        if (!isProjectAdmin && task.approvalStatus === 'pending') {
+            e.preventDefault();
+            return;
+        }
         setDraggingTask(task);
         e.dataTransfer.effectAllowed = 'move';
         e.target.classList.add('dragging');
@@ -135,20 +171,67 @@ const KanbanBoard = () => {
             return;
         }
 
-        // Optimistic update
-        const updatedTasks = tasks.map(task =>
-            task._id === draggingTask._id
-                ? { ...task, status: newStatus }
-                : task
-        );
-        setTasks(updatedTasks);
+        if (isProjectAdmin) {
+            // Admin: update status directly
+            const updatedTasks = tasks.map(task =>
+                task._id === draggingTask._id
+                    ? { ...task, status: newStatus }
+                    : task
+            );
+            setTasks(updatedTasks);
+
+            try {
+                await taskService.updateStatus(draggingTask._id, newStatus);
+            } catch (error) {
+                console.error('Error updating task:', error);
+                fetchData();
+            }
+        } else {
+            // Member: create approval request
+            try {
+                const res = await taskService.updateStatus(draggingTask._id, newStatus);
+                if (res.message) {
+                    alert(res.message);
+                }
+                fetchData();
+            } catch (error) {
+                console.error('Error requesting stage change:', error);
+                alert(error.response?.data?.message || 'Failed to request stage change');
+            }
+        }
+    };
+
+    // Handle approval action (admin only)
+    const handleApproval = async (e, taskId, action) => {
+        e.stopPropagation();
+
+        // Optimistic update to hide banner immediately
+        const taskToUpdate = tasks.find(t => t._id === taskId);
+        if (taskToUpdate) {
+            const updatedTasks = tasks.map(t => 
+                t._id === taskId 
+                    ? { 
+                        ...t, 
+                        approvalStatus: 'none', 
+                        status: action === 'approve' ? t.requestedStatus : t.status,
+                        requestedStatus: null
+                      } 
+                    : t
+            );
+            setTasks(updatedTasks);
+        }
 
         try {
-            await taskService.updateStatus(draggingTask._id, newStatus);
-        } catch (error) {
-            console.error('Error updating task:', error);
-            // Revert on error
+            if (action === 'approve') {
+                await taskService.approveStage(taskId);
+            } else if (action === 'reject') {
+                await taskService.rejectStage(taskId);
+            }
             fetchData();
+        } catch (error) {
+            console.error('Error processing approval:', error);
+            alert(error.response?.data?.message || 'Failed to process approval');
+            fetchData(); // Rollback on error
         }
     };
 
@@ -235,6 +318,12 @@ const KanbanBoard = () => {
         return { count: columnTasks.length, points: totalPoints };
     };
 
+    // Get the next possible statuses for a task
+    const getNextStatuses = (currentStatus) => {
+        const statusOrder = ['todo', 'in-progress', 'review', 'done'];
+        return statusOrder.filter(s => s !== currentStatus);
+    };
+
     return (
         <div className="page">
             <Navbar />
@@ -261,6 +350,11 @@ const KanbanBoard = () => {
                             {selectedProject !== 'all' && projectRole && (
                                 <span className={`role-indicator ${isProjectAdmin ? 'role-admin' : 'role-member'}`}>
                                     {isProjectAdmin ? '🛡️ Admin' : '👤 Member'}
+                                </span>
+                            )}
+                            {isProjectAdmin && pendingCount > 0 && (
+                                <span className="pending-approvals-badge">
+                                    ⏳ {pendingCount} Pending
                                 </span>
                             )}
                             {isProjectAdmin && (
@@ -306,12 +400,42 @@ const KanbanBoard = () => {
                                             {getTasksByStatus(column.id).map(task => (
                                                 <div
                                                     key={task._id}
-                                                    className="kanban-card"
-                                                    draggable
+                                                    className={`kanban-card ${task.approvalStatus === 'pending' ? 'has-pending-approval' : ''}`}
+                                                    draggable={!(task.approvalStatus === 'pending' && !isProjectAdmin)}
                                                     onDragStart={(e) => handleDragStart(e, task)}
                                                     onDragEnd={handleDragEnd}
                                                     onClick={() => isProjectAdmin && openEditModal(task)}
                                                 >
+                                                    {/* Pending approval badge for this task */}
+                                                    {task.approvalStatus === 'pending' && (
+                                                        <div className="approval-pending-banner">
+                                                            <div className="approval-info">
+                                                                <span className="approval-icon">⏳</span>
+                                                                <span className="approval-text">
+                                                                    {task.approvalRequestedBy?.name || 'Member'} requests move to <strong>{STATUS_LABELS[task.requestedStatus] || task.requestedStatus}</strong>
+                                                                </span>
+                                                            </div>
+                                                            {isProjectAdmin && (
+                                                                <div className="approval-actions">
+                                                                    <button
+                                                                        className="btn-approve"
+                                                                        onClick={(e) => handleApproval(e, task._id, 'approve')}
+                                                                        title="Approve Move"
+                                                                    >
+                                                                        Approve
+                                                                    </button>
+                                                                    <button
+                                                                        className="btn-reject"
+                                                                        onClick={(e) => handleApproval(e, task._id, 'reject')}
+                                                                        title="Reject Move"
+                                                                    >
+                                                                        Reject
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+
                                                     <div className="kanban-card-header">
                                                         <span
                                                             className="priority-indicator"
@@ -347,6 +471,40 @@ const KanbanBoard = () => {
                                                             </span>
                                                         )}
                                                     </div>
+
+                                                    {/* Member: show "Request Move" buttons if no pending approval */}
+                                                    {!isProjectAdmin && task.approvalStatus !== 'pending' && (
+                                                        <div className="member-move-actions">
+                                                            <span className="move-label">Move to:</span>
+                                                            {getNextStatuses(task.status).map(targetStatus => (
+                                                                <button
+                                                                    key={targetStatus}
+                                                                    className="move-request-btn"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        taskService.updateStatus(task._id, targetStatus)
+                                                                            .then(res => {
+                                                                                if (res.message) alert(res.message);
+                                                                                fetchData();
+                                                                            })
+                                                                            .catch(err => {
+                                                                                alert(err.response?.data?.message || 'Failed to request');
+                                                                            });
+                                                                    }}
+                                                                >
+                                                                    {STATUS_LABELS[targetStatus]}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    )}
+
+                                                    {/* Member: show waiting message if pending */}
+                                                    {!isProjectAdmin && task.approvalStatus === 'pending' && (
+                                                        <div className="member-waiting-badge">
+                                                            ⏳ Waiting for admin approval
+                                                        </div>
+                                                    )}
+
                                                     {isProjectAdmin && (
                                                         <button
                                                             className="delete-card-btn"

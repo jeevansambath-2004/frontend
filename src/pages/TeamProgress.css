@@ -465,3 +465,72 @@
         gap: 1.5rem;
     }
 }
+
+/* ========================================
+   Story Points Earned Styles
+   ======================================== */
+
+/* Points Earned Section in Member Card */
+.tp-member-points-earned {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    margin-right: 8px;
+}
+
+.tp-points-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(99, 102, 241, 0.15));
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 10px;
+    padding: 6px 12px;
+    min-width: 64px;
+}
+
+.tp-points-number {
+    font-size: 18px;
+    font-weight: 800;
+    color: #8b5cf6;
+    line-height: 1;
+}
+
+.tp-points-label {
+    font-size: 9px;
+    color: #a78bfa;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+}
+
+.tp-points-detail {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+}
+
+.tp-points-done {
+    color: #10b981;
+    font-weight: 600;
+}
+
+.tp-points-total {
+    color: var(--text-tertiary);
+    font-weight: 500;
+}
+
+/* Story Points in Task Item */
+.tp-task-sp {
+    font-size: 10px;
+    font-weight: 700;
+    color: #8b5cf6;
+    background: rgba(139, 92, 246, 0.12);
+    border: 1px solid rgba(139, 92, 246, 0.25);
+    padding: 1px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}

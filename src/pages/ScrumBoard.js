@@ -14,6 +14,13 @@ const STATUSES = [
     { id: 'done', title: 'Done', icon: '✅' }
 ];
 
+const STATUS_LABELS = {
+    'todo': 'To Do',
+    'in-progress': 'In Progress',
+    'review': 'Review',
+    'done': 'Done'
+};
+
 const ScrumBoard = () => {
     const { user } = useAuth();
     const [projects, setProjects] = useState([]);
@@ -32,6 +39,7 @@ const ScrumBoard = () => {
     const [editingTask, setEditingTask] = useState(null);
     const [saving, setSaving] = useState(false);
     const [projectRole, setProjectRole] = useState(null);
+    const [pendingCount, setPendingCount] = useState(0);
 
     // Check if user is admin/owner
     const isProjectAdmin = user?.role === 'admin' || projectRole === 'owner' || projectRole === 'admin';
@@ -87,6 +95,25 @@ const ScrumBoard = () => {
         }
     }, [selectedProject]);
 
+    // Count pending approvals
+    useEffect(() => {
+        const fetchPendingCount = async () => {
+            if (isProjectAdmin && selectedProject) {
+                try {
+                    const res = await taskService.getPendingApprovals(selectedProject);
+                    setPendingCount(res.count || 0);
+                } catch {
+                    setPendingCount(0);
+                }
+            } else {
+                setPendingCount(0);
+            }
+        };
+        if (isProjectAdmin) {
+            fetchPendingCount();
+        }
+    }, [selectedProject, isProjectAdmin, sprintTasks, backlogTasks]);
+
     const fetchProjects = async () => {
         try {
             const response = await projectService.getAll();
@@ -132,6 +159,11 @@ const ScrumBoard = () => {
     }, [sprintTasks]);
 
     const handleDragStart = (e, task) => {
+        // Prevent dragging if task has pending approval (for members)
+        if (!isProjectAdmin && task.approvalStatus === 'pending') {
+            e.preventDefault();
+            return;
+        }
         e.dataTransfer.setData('taskId', task._id);
         e.target.classList.add('dragging');
     };
@@ -147,21 +179,74 @@ const ScrumBoard = () => {
 
         if (!task || task.status === newStatus) return;
 
-        // Optimistic update
-        setSprintTasks(prev => prev.map(t =>
-            t._id === taskId ? { ...t, status: newStatus } : t
-        ));
+        if (isProjectAdmin) {
+            // Admin: update status directly (optimistic update)
+            setSprintTasks(prev => prev.map(t =>
+                t._id === taskId ? { ...t, status: newStatus } : t
+            ));
 
-        try {
-            await taskService.updateStatus(taskId, newStatus);
-        } catch (error) {
-            console.error('Error updating task:', error);
-            fetchProjectData();
+            try {
+                await taskService.updateStatus(taskId, newStatus);
+            } catch (error) {
+                console.error('Error updating task:', error);
+                fetchProjectData();
+            }
+        } else {
+            // Member: create approval request
+            try {
+                const res = await taskService.updateStatus(taskId, newStatus);
+                if (res.message) {
+                    alert(res.message);
+                }
+                fetchProjectData();
+            } catch (error) {
+                console.error('Error requesting stage change:', error);
+                alert(error.response?.data?.message || 'Failed to request stage change');
+            }
         }
     };
 
     const handleDragOver = (e) => {
         e.preventDefault();
+    };
+
+    // Handle approval action (admin only)
+    const handleApproval = async (e, taskId, action) => {
+        e.stopPropagation();
+
+        // Optimistic update
+        const updateTaskInList = (list) => list.map(t => 
+            t._id === taskId 
+                ? { 
+                    ...t, 
+                    approvalStatus: 'none', 
+                    status: action === 'approve' ? (t.requestedStatus || t.status) : t.status,
+                    requestedStatus: null
+                  } 
+                : t
+        );
+
+        setSprintTasks(prev => updateTaskInList(prev));
+        setBacklogTasks(prev => updateTaskInList(prev));
+
+        try {
+            if (action === 'approve') {
+                await taskService.approveStage(taskId);
+            } else if (action === 'reject') {
+                await taskService.rejectStage(taskId);
+            }
+            fetchProjectData();
+        } catch (error) {
+            console.error('Error processing approval:', error);
+            alert(error.response?.data?.message || 'Failed to process approval');
+            fetchProjectData(); // Rollback
+        }
+    };
+
+    // Get the next possible statuses for a task
+    const getNextStatuses = (currentStatus) => {
+        const statusOrder = ['todo', 'in-progress', 'review', 'done'];
+        return statusOrder.filter(s => s !== currentStatus);
     };
 
     // Sprint Modal Functions
@@ -330,6 +415,45 @@ const ScrumBoard = () => {
         return { total, completed, totalPoints, completedPoints };
     };
 
+    // Compute story points per member from sprint tasks
+    const getMemberPoints = () => {
+        const membersMap = {};
+        sprintTasks.forEach(task => {
+            if (!task.assignee) return;
+            const id = task.assignee._id || task.assignee;
+            if (!membersMap[id]) {
+                membersMap[id] = {
+                    user: task.assignee,
+                    totalPoints: 0,
+                    earnedPoints: 0, // in-progress + review + done
+                    donePoints: 0,
+                    inProgressPoints: 0,
+                    reviewPoints: 0,
+                    todoPoints: 0,
+                    totalTasks: 0,
+                    doneTasks: 0
+                };
+            }
+            const sp = task.storyPoints || 0;
+            membersMap[id].totalPoints += sp;
+            membersMap[id].totalTasks += 1;
+            if (task.status === 'done') {
+                membersMap[id].donePoints += sp;
+                membersMap[id].earnedPoints += sp;
+                membersMap[id].doneTasks += 1;
+            } else if (task.status === 'in-progress') {
+                membersMap[id].inProgressPoints += sp;
+                membersMap[id].earnedPoints += sp;
+            } else if (task.status === 'review') {
+                membersMap[id].reviewPoints += sp;
+                membersMap[id].earnedPoints += sp;
+            } else {
+                membersMap[id].todoPoints += sp;
+            }
+        });
+        return Object.values(membersMap).sort((a, b) => b.earnedPoints - a.earnedPoints);
+    };
+
     const getDaysRemaining = () => {
         if (!activeSprint?.endDate) return null;
         const end = new Date(activeSprint.endDate);
@@ -341,6 +465,7 @@ const ScrumBoard = () => {
     const stats = getSprintStats();
     const daysRemaining = getDaysRemaining();
     const progress = stats.total > 0 ? (stats.completed / stats.total) * 100 : 0;
+    const memberPoints = getMemberPoints();
 
     return (
         <div className="page">
@@ -415,6 +540,11 @@ const ScrumBoard = () => {
                                     {selectedProject && projectRole && (
                                         <span className={`role-indicator ${isProjectAdmin ? 'role-admin' : 'role-member'}`}>
                                             {isProjectAdmin ? '🛡️ Admin' : '👤 Member'}
+                                        </span>
+                                    )}
+                                    {isProjectAdmin && pendingCount > 0 && (
+                                        <span className="pending-approvals-badge">
+                                            ⏳ {pendingCount} Pending
                                         </span>
                                     )}
                                 </div>
@@ -510,6 +640,50 @@ const ScrumBoard = () => {
                                         </div>
                                     )}
 
+                                    {/* Member Story Points */}
+                                    {activeSprint && memberPoints.length > 0 && (
+                                        <div className="member-points-section">
+                                            <h3 className="member-points-title">📊 Member Story Points</h3>
+                                            <div className="member-points-grid">
+                                                {memberPoints.map(mp => (
+                                                    <div key={mp.user._id || mp.user} className="member-points-card">
+                                                        <div className="mp-header">
+                                                            <div className="mp-user-info">
+                                                                {mp.user.avatar
+                                                                    ? <img src={mp.user.avatar} alt={mp.user.name} className="mp-avatar" />
+                                                                    : <span className="mp-avatar mp-avatar-initial">{mp.user.name?.charAt(0).toUpperCase()}</span>
+                                                                }
+                                                                <span className="mp-name">{mp.user.name || 'Unknown'}</span>
+                                                            </div>
+                                                            <div className="mp-earned-badge">
+                                                                <span className="mp-earned-num">{mp.earnedPoints}</span>
+                                                                <span className="mp-earned-label">SP</span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="mp-progress-bar">
+                                                            <div className="mp-progress-track">
+                                                                {mp.totalPoints > 0 && (
+                                                                    <>
+                                                                        <div className="mp-bar-done" style={{ width: `${(mp.donePoints / mp.totalPoints) * 100}%` }} title={`Done: ${mp.donePoints} SP`}></div>
+                                                                        <div className="mp-bar-review" style={{ width: `${(mp.reviewPoints / mp.totalPoints) * 100}%` }} title={`Review: ${mp.reviewPoints} SP`}></div>
+                                                                        <div className="mp-bar-inprogress" style={{ width: `${(mp.inProgressPoints / mp.totalPoints) * 100}%` }} title={`In Progress: ${mp.inProgressPoints} SP`}></div>
+                                                                    </>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <div className="mp-breakdown">
+                                                            <span className="mp-stat" title="Done">✅ {mp.donePoints}</span>
+                                                            <span className="mp-stat" title="Review">👀 {mp.reviewPoints}</span>
+                                                            <span className="mp-stat" title="In Progress">🔄 {mp.inProgressPoints}</span>
+                                                            <span className="mp-stat" title="To Do">📋 {mp.todoPoints}</span>
+                                                            <span className="mp-stat-total">/ {mp.totalPoints} SP</span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
                                     {/* Sprint Board */}
                                     {activeSprint && (
                                         <div className="sprint-board">
@@ -529,12 +703,42 @@ const ScrumBoard = () => {
                                                         {getTasksByStatus(status.id).map(task => (
                                                             <div
                                                                 key={task._id}
-                                                                className="sprint-task-card"
-                                                                draggable
+                                                                className={`sprint-task-card ${task.approvalStatus === 'pending' ? 'has-pending-approval' : ''}`}
+                                                                draggable={!(task.approvalStatus === 'pending' && !isProjectAdmin)}
                                                                 onDragStart={(e) => handleDragStart(e, task)}
                                                                 onDragEnd={handleDragEnd}
                                                                 onClick={() => isProjectAdmin && openTaskModal(task)}
                                                             >
+                                                                {/* Pending approval badge */}
+                                                                {task.approvalStatus === 'pending' && (
+                                                                    <div className="approval-pending-banner">
+                                                                        <div className="approval-info">
+                                                                            <span className="approval-icon">⏳</span>
+                                                                            <span className="approval-text">
+                                                                                {task.approvalRequestedBy?.name || 'Member'} → <strong>{STATUS_LABELS[task.requestedStatus] || task.requestedStatus}</strong>
+                                                                            </span>
+                                                                        </div>
+                                                                        {isProjectAdmin && (
+                                                                            <div className="approval-actions">
+                                                                                <button
+                                                                                    className="btn-approve"
+                                                                                    onClick={(e) => handleApproval(e, task._id, 'approve')}
+                                                                                    title="Approve Move"
+                                                                                >
+                                                                                    Approve
+                                                                                </button>
+                                                                                <button
+                                                                                    className="btn-reject"
+                                                                                    onClick={(e) => handleApproval(e, task._id, 'reject')}
+                                                                                    title="Reject Move"
+                                                                                >
+                                                                                    Reject
+                                                                                </button>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+
                                                                 <div className="task-card-top">
                                                                     <span className={`priority-dot priority-${task.priority}`}></span>
                                                                     {task.storyPoints > 0 && (
@@ -570,6 +774,39 @@ const ScrumBoard = () => {
                                                                         ↩
                                                                     </button>
                                                                 </div>
+
+                                                                {/* Member: show "Move to" buttons if no pending approval */}
+                                                                {!isProjectAdmin && task.approvalStatus !== 'pending' && (
+                                                                    <div className="member-move-actions">
+                                                                        <span className="move-label">Move to:</span>
+                                                                        {getNextStatuses(task.status).map(targetStatus => (
+                                                                            <button
+                                                                                key={targetStatus}
+                                                                                className="move-request-btn"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    taskService.updateStatus(task._id, targetStatus)
+                                                                                        .then(res => {
+                                                                                            if (res.message) alert(res.message);
+                                                                                            fetchProjectData();
+                                                                                        })
+                                                                                        .catch(err => {
+                                                                                            alert(err.response?.data?.message || 'Failed to request');
+                                                                                        });
+                                                                                }}
+                                                                            >
+                                                                                {STATUS_LABELS[targetStatus]}
+                                                                            </button>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+
+                                                                {/* Member: waiting message if pending */}
+                                                                {!isProjectAdmin && task.approvalStatus === 'pending' && (
+                                                                    <div className="member-waiting-badge">
+                                                                        ⏳ Waiting for admin approval
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         ))}
                                                     </div>
@@ -595,7 +832,7 @@ const ScrumBoard = () => {
                                     ) : (
                                         <div className="backlog-list">
                                             {backlogTasks.map(task => (
-                                                <div key={task._id} className="backlog-item">
+                                                <div key={task._id} className={`backlog-item ${task.approvalStatus === 'pending' ? 'has-pending-approval' : ''}`}>
                                                     <div className="backlog-item-left">
                                                         <span className={`priority-dot priority-${task.priority}`}></span>
                                                         <div className="backlog-item-info">
@@ -610,6 +847,36 @@ const ScrumBoard = () => {
                                                         <span className={`status-badge status-${task.status}`}>
                                                             {task.status.replace('-', ' ')}
                                                         </span>
+
+                                                        {/* Approval pending indicator in backlog */}
+                                                        {task.approvalStatus === 'pending' && (
+                                                            <div className="backlog-approval-indicator">
+                                                                <span className="approval-badge-inline">
+                                                                    ⏳ {task.approvalRequestedBy?.name || 'Member'} → {STATUS_LABELS[task.requestedStatus]}
+                                                                </span>
+                                                                {isProjectAdmin && (
+                                                                    <div className="approval-actions" style={{ marginLeft: '10px' }}>
+                                                                        <button
+                                                                            className="btn-approve btn-approve-sm"
+                                                                            onClick={(e) => handleApproval(e, task._id, 'approve')}
+                                                                            title="Approve Move"
+                                                                            style={{ padding: '2px 8px', fontSize: '10px' }}
+                                                                        >
+                                                                            Approve
+                                                                        </button>
+                                                                        <button
+                                                                            className="btn-reject btn-reject-sm"
+                                                                            onClick={(e) => handleApproval(e, task._id, 'reject')}
+                                                                            title="Reject Move"
+                                                                            style={{ padding: '2px 8px', fontSize: '10px' }}
+                                                                        >
+                                                                            Reject
+                                                                        </button>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
+
                                                         <div className="backlog-item-actions">
                                                             {isProjectAdmin && activeSprint && (
                                                                 <button

@@ -143,6 +143,10 @@ const TeamProgress = () => {
                                         <span className="tp-stat-label">In Progress</span>
                                     </div>
                                     <div className="tp-stat-item">
+                                        <span className="tp-stat-num" style={{ color: '#8b5cf6' }}>{allTasks.reduce((sum, t) => sum + (t.storyPoints || 0), 0)}</span>
+                                        <span className="tp-stat-label">Total SP</span>
+                                    </div>
+                                    <div className="tp-stat-item">
                                         <span className="tp-stat-num" style={{ color: '#6366f1' }}>{progressData.team.length}</span>
                                         <span className="tp-stat-label">Members</span>
                                     </div>
@@ -250,6 +254,9 @@ const TeamProgress = () => {
                                                                     style={{ backgroundColor: sc.color }}
                                                                 ></span>
                                                                 <span className="tp-task-title">{task.title}</span>
+                                                                {task.storyPoints > 0 && (
+                                                                    <span className="tp-task-sp">{task.storyPoints} SP</span>
+                                                                )}
                                                                 <span
                                                                     className="tp-task-status-label"
                                                                     style={{ color: sc.color, background: sc.bg }}

@@ -1,11 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
+import { useAuth } from '../context/AuthContext';
 import taskService from '../services/taskService';
 import projectService from '../services/projectService';
 import './Pages.css';
 import './Tasks.css';
 
+const STATUS_LABELS = {
+    'todo': 'To Do',
+    'in-progress': 'In Progress',
+    'review': 'Review',
+    'done': 'Done'
+};
+
 const Tasks = () => {
+    const { user } = useAuth();
     const [tasks, setTasks] = useState([]);
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -106,11 +115,60 @@ const Tasks = () => {
 
     const handleStatusChange = async (taskId, newStatus) => {
         try {
-            await taskService.updateStatus(taskId, newStatus);
+            const res = await taskService.updateStatus(taskId, newStatus);
+            if (res.message) {
+                alert(res.message);
+            }
             fetchData();
         } catch (error) {
             console.error('Error updating task:', error);
+            alert(error.response?.data?.message || 'Failed to update status');
         }
+    };
+
+    // Handle approval action (admin only)
+    const handleApproval = async (e, taskId, action) => {
+        e.stopPropagation();
+
+        // Optimistic update
+        const updatedTasks = tasks.map(t => 
+            t._id === taskId 
+                ? { 
+                    ...t, 
+                    approvalStatus: 'none', 
+                    status: action === 'approve' ? (t.requestedStatus || t.status) : t.status,
+                    requestedStatus: null
+                  } 
+                : t
+        );
+        setTasks(updatedTasks);
+
+        try {
+            if (action === 'approve') {
+                await taskService.approveStage(taskId);
+            } else if (action === 'reject') {
+                await taskService.rejectStage(taskId);
+            }
+            fetchData();
+        } catch (error) {
+            console.error('Error processing approval:', error);
+            alert(error.response?.data?.message || 'Failed to process approval');
+            fetchData(); // Rollback
+        }
+    };
+
+    const checkIfAdmin = (task) => {
+        if (!user || !task.project) return false;
+        if (user.role === 'admin') return true;
+        
+        const project = task.project;
+        // Check if user is owner of the project
+        const ownerId = project.owner?._id || project.owner;
+        if (ownerId === user.id) return true;
+        
+        // This is a bit limited since we don't have full member list here usually
+        // but it's a good heuristic for the UI
+        return false;
     };
 
     const handleDeleteTask = async (taskId) => {
@@ -210,6 +268,39 @@ const Tasks = () => {
                                             </button>
                                         </div>
                                     </div>
+                                    
+                                    {/* Approval pending banner */}
+                                    {task.approvalStatus === 'pending' && (
+                                        <div className="approval-pending-banner">
+                                            <div className="approval-info">
+                                                <span className="approval-icon">⏳</span>
+                                                <div className="approval-text">
+                                                    <strong>{task.approvalRequestedBy?.name || 'Member'}</strong> requested to move this to <strong>{STATUS_LABELS[task.requestedStatus]}</strong>
+                                                </div>
+                                            </div>
+                                            {checkIfAdmin(task) ? (
+                                                <div className="approval-actions">
+                                                    <button 
+                                                        className="btn-approve"
+                                                        onClick={(e) => handleApproval(e, task._id, 'approve')}
+                                                    >
+                                                        Approve
+                                                    </button>
+                                                    <button 
+                                                        className="btn-reject"
+                                                        onClick={(e) => handleApproval(e, task._id, 'reject')}
+                                                    >
+                                                        Reject
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div className="member-waiting-badge">
+                                                    Waiting for admin approval
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
                                     <h3 className="task-title">{task.title}</h3>
                                     {task.description && (
                                         <p className="task-description">{task.description}</p>

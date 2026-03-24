@@ -19,6 +19,7 @@ import AdminPanel from '../pages/AdminPanel';
 import AdminAccess from '../pages/AdminAccess';
 import TeamProgress from '../pages/TeamProgress';
 import ProductivityDashboard from '../pages/ProductivityDashboard';
+import Feedback from '../pages/Feedback';
 
 // Components
 import PrivateRoute from '../components/PrivateRoute';
@@ -73,6 +74,9 @@ const AppRoutes = () => {
             <Route path="/admin" element={
                 <AdminRoute><AdminPanel /></AdminRoute>
             } />
+
+            {/* Application Routes */}
+            <Route path="/feedback" element={<Feedback />} />
 
             {/* 404 Route */}
             <Route path="*" element={<NotFound />} />

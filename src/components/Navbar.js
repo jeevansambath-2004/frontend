@@ -36,20 +36,19 @@ const Navbar = () => {
                             <Link to="/messages" className="navbar-link">Messages</Link>
                             {user?.role === 'admin' && (
                                 <>
-                                    <Link to="/team-progress" className="navbar-link" style={{ color: '#10b981' }}>
-                                        📊 Team Progress
-                                    </Link>
                                     <Link to="/admin" className="navbar-link" style={{ color: '#f59e0b' }}>
                                         👑 Admin
                                     </Link>
                                 </>
                             )}
+                            <Link to="/feedback" className="navbar-link">Feedback</Link>
                         </>
                     ) : (
                         <>
                             <a href="#features" className="navbar-link">Features</a>
                             <a href="#pricing" className="navbar-link">Pricing</a>
                             <a href="#about" className="navbar-link">About</a>
+                            <a href="#feedback" className="navbar-link">Feedback</a>
                         </>
                     )}
                 </div>
