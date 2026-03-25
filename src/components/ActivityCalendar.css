@@ -54,54 +54,26 @@
     opacity: 0.2;
 }
 
-/* GitHub Style Colors */
+/* Default configuration (Dark Mode) */
 .color-empty {
-    background-color: var(--border-color, #ebedf0);
+    background-color: var(--bg-secondary);
+    border-color: var(--border-color);
 }
 
-.color-scale-1 {
-    background-color: #9be9a8;
+.color-scale-1 { background-color: #0e4429; }
+.color-scale-2 { background-color: #006d32; }
+.color-scale-3 { background-color: #26a641; }
+.color-scale-4 { background-color: #39d353; }
+
+/* Light mode support */
+[data-theme='light'] .color-empty {
+    background-color: #ebedf0;
 }
 
-.color-scale-2 {
-    background-color: #40c463;
-}
-
-.color-scale-3 {
-    background-color: #30a14e;
-}
-
-.color-scale-4 {
-    background-color: #216e39;
-}
-
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-    .activity-calendar-container {
-        background: transparent;
-    }
-
-    .color-empty {
-        background-color: var(--bg-secondary);
-        border-color: rgba(255, 255, 255, 0.05);
-    }
-
-    .color-scale-1 {
-        background-color: #0e4429;
-    }
-
-    .color-scale-2 {
-        background-color: #006d32;
-    }
-
-    .color-scale-3 {
-        background-color: #26a641;
-    }
-
-    .color-scale-4 {
-        background-color: #39d353;
-    }
-}
+[data-theme='light'] .color-scale-1 { background-color: #9be9a8; }
+[data-theme='light'] .color-scale-2 { background-color: #40c463; }
+[data-theme='light'] .color-scale-3 { background-color: #30a14e; }
+[data-theme='light'] .color-scale-4 { background-color: #216e39; }
 
 .calendar-legend {
     display: flex;

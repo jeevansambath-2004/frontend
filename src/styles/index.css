@@ -42,6 +42,7 @@
   --bg-tertiary: #16213e;
   --bg-card: rgba(255, 255, 255, 0.05);
   --bg-card-hover: rgba(255, 255, 255, 0.08);
+  --bg-nav: rgba(15, 15, 35, 0.8);
 
   /* Text Colors */
   --text-primary: #ffffff;
@@ -95,6 +96,23 @@
   --text-3xl: 1.875rem;
   --text-4xl: 2.25rem;
   --text-5xl: 3rem;
+}
+
+/* Light Theme */
+[data-theme='light'] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f3f4f6;
+  --bg-tertiary: #e5e7eb;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f9fafb;
+  --bg-nav: rgba(255, 255, 255, 0.9);
+
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-muted: #6b7280;
+
+  --border-color: rgba(0, 0, 0, 0.1);
+  --border-color-hover: rgba(0, 0, 0, 0.2);
 }
 
 /* ========================================
@@ -187,13 +205,13 @@ select {
 
 /* Select dropdown fix for dark theme */
 select {
-  background-color: #1a1a2e;
-  color: #ffffff;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
 }
 
 select option {
-  background-color: #1f2937;
-  color: #ffffff;
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
   padding: 10px;
 }
 

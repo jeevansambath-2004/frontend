@@ -149,16 +149,16 @@ select.input {
 }
 
 select.input option {
-    background: #1f2937;
-    color: #ffffff;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
     padding: 12px;
 }
 
 select.input option:hover,
 select.input option:focus,
 select.input option:checked {
-    background: #374151;
-    color: #ffffff;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
 }
 
 /* ========================================
