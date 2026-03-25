@@ -476,12 +476,14 @@ const KanbanBoard = () => {
                                                     {!isProjectAdmin && task.approvalStatus !== 'pending' && (
                                                         <div className="member-move-actions">
                                                             <span className="move-label">Move to:</span>
-                                                            {getNextStatuses(task.status).map(targetStatus => (
-                                                                <button
-                                                                    key={targetStatus}
-                                                                    className="move-request-btn"
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
+                                                            <select
+                                                                className="member-status-select"
+                                                                value={task.status}
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                onChange={(e) => {
+                                                                    e.stopPropagation();
+                                                                    const targetStatus = e.target.value;
+                                                                    if (targetStatus !== task.status) {
                                                                         taskService.updateStatus(task._id, targetStatus)
                                                                             .then(res => {
                                                                                 if (res.message) alert(res.message);
@@ -490,11 +492,16 @@ const KanbanBoard = () => {
                                                                             .catch(err => {
                                                                                 alert(err.response?.data?.message || 'Failed to request');
                                                                             });
-                                                                    }}
-                                                                >
-                                                                    {STATUS_LABELS[targetStatus]}
-                                                                </button>
-                                                            ))}
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <option value={task.status} disabled>{STATUS_LABELS[task.status]}</option>
+                                                                {getNextStatuses(task.status).map(targetStatus => (
+                                                                    <option key={targetStatus} value={targetStatus}>
+                                                                        {STATUS_LABELS[targetStatus]}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
                                                         </div>
                                                     )}
 

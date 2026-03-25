@@ -98,10 +98,13 @@ const Tasks = () => {
         }
         try {
             setSaving(true);
+            const taskData = { ...formData };
+            if (!taskData.dueDate) delete taskData.dueDate;
+
             if (editingTask) {
-                await taskService.update(editingTask._id, formData);
+                await taskService.update(editingTask._id, taskData);
             } else {
-                await taskService.create(formData);
+                await taskService.create(taskData);
             }
             closeModal();
             fetchData();
