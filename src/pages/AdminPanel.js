@@ -40,7 +40,7 @@ const AdminPanel = () => {
     const [showCreateProject, setShowCreateProject] = useState(false);
     const [creatingProject, setCreatingProject] = useState(false);
     const [createProjectForm, setCreateProjectForm] = useState({
-        name: '', description: '', status: 'planning', priority: 'medium', color: '#6366f1', boardType: 'kanban'
+        name: '', description: '', status: 'planning', priority: 'medium', color: '#6366f1', boardType: 'kanban', startDate: new Date().toISOString().split('T')[0], endDate: ''
     });
     const PROJECT_COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#22c55e', '#14b8a6'];
 
@@ -183,7 +183,7 @@ const AdminPanel = () => {
             await projectService.create(createProjectForm);
             showToast('Project created successfully! You are now the Team Leader.');
             setShowCreateProject(false);
-            setCreateProjectForm({ name: '', description: '', status: 'planning', priority: 'medium', color: '#6366f1', boardType: 'kanban' });
+            setCreateProjectForm({ name: '', description: '', status: 'planning', priority: 'medium', color: '#6366f1', boardType: 'kanban', startDate: new Date().toISOString().split('T')[0], endDate: '' });
             fetchProjects();
             fetchStats();
         } catch (error) {
@@ -804,6 +804,16 @@ const AdminPanel = () => {
                                             <option value="high">High</option>
                                             <option value="critical">Critical</option>
                                         </select>
+                                    </div>
+                                </div>
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label>Start Date</label>
+                                        <input type="date" className="input" value={createProjectForm.startDate} readOnly disabled style={{ backgroundColor: 'var(--bg-secondary)', cursor: 'not-allowed' }} />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>End Date</label>
+                                        <input type="date" className="input" value={createProjectForm.endDate} min={createProjectForm.startDate} onChange={(e) => setCreateProjectForm({ ...createProjectForm, endDate: e.target.value })} required />
                                     </div>
                                 </div>
                                 <div className="form-group">

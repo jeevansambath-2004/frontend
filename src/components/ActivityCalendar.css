@@ -15,28 +15,23 @@
 
 .calendar-grid {
     display: flex;
-    gap: 3px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding-bottom: 8px;
+    gap: 5px;
     width: 100%;
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding-bottom: 4px;
 }
 
 .calendar-week {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    flex: 1 1 0;
-    min-width: 0;
+    display: contents;
 }
 
 .calendar-day {
-    width: 100%;
-    aspect-ratio: 1;
-    min-width: 0;
-    min-height: 0;
-    flex-shrink: 0;
-    border-radius: 3px;
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    min-height: 28px;
+    border-radius: 4px;
     border: 1px solid rgba(27, 31, 35, 0.06);
     background-color: #ebedf0;
     transition: transform 0.1s ease-in-out, background-color 0.3s ease;
@@ -51,12 +46,13 @@
 }
 
 .day-future {
-    opacity: 0.2;
+    background-color: lightgray !important;
+    opacity: 1;
 }
 
 /* Default configuration (Dark Mode) */
 .color-empty {
-    background-color: var(--bg-secondary);
+    background-color: darkgray;
     border-color: var(--border-color);
 }
 
@@ -67,7 +63,7 @@
 
 /* Light mode support */
 [data-theme='light'] .color-empty {
-    background-color: #ebedf0;
+    background-color: darkgray;
 }
 
 [data-theme='light'] .color-scale-1 { background-color: #9be9a8; }

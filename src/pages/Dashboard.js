@@ -17,7 +17,9 @@ const Dashboard = () => {
         description: '',
         status: 'planning',
         priority: 'medium',
-        boardType: 'kanban'
+        boardType: 'kanban',
+        startDate: new Date().toISOString().split('T')[0],
+        endDate: ''
     });
     const [creating, setCreating] = useState(false);
 
@@ -47,7 +49,7 @@ const Dashboard = () => {
             setCreating(true);
             await projectService.create(newProject);
             setShowModal(false);
-            setNewProject({ name: '', description: '', status: 'planning', priority: 'medium', boardType: 'kanban' });
+            setNewProject({ name: '', description: '', status: 'planning', priority: 'medium', boardType: 'kanban', startDate: new Date().toISOString().split('T')[0], endDate: '' });
             fetchData();
         } catch (error) {
             console.error('Error creating project:', error);
@@ -222,6 +224,32 @@ const Dashboard = () => {
                                     </select>
                                 </div>
                             </div>
+                            {user?.role === 'admin' && (
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label>Start Date</label>
+                                        <input
+                                            type="date"
+                                            className="input"
+                                            value={newProject.startDate}
+                                            readOnly
+                                            disabled
+                                            style={{ backgroundColor: 'var(--bg-secondary)', cursor: 'not-allowed' }}
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>End Date</label>
+                                        <input
+                                            type="date"
+                                            className="input"
+                                            value={newProject.endDate}
+                                            onChange={(e) => setNewProject({ ...newProject, endDate: e.target.value })}
+                                            min={newProject.startDate}
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                            )}
                             <div className="form-group">
                                 <label>Board Type *</label>
                                 <div className="board-type-selector">

@@ -20,7 +20,9 @@ const Projects = () => {
         status: 'planning',
         priority: 'medium',
         color: '#6366f1',
-        boardType: 'kanban'
+        boardType: 'kanban',
+        startDate: new Date().toISOString().split('T')[0],
+        endDate: ''
     });
     const [saving, setSaving] = useState(false);
 
@@ -74,7 +76,9 @@ const Projects = () => {
             status: 'planning',
             priority: 'medium',
             color: '#6366f1',
-            boardType: 'kanban'
+            boardType: 'kanban',
+            startDate: new Date().toISOString().split('T')[0],
+            endDate: ''
         });
         setShowModal(true);
     };
@@ -87,7 +91,9 @@ const Projects = () => {
             status: project.status,
             priority: project.priority,
             color: project.color || '#6366f1',
-            boardType: project.boardType || 'kanban'
+            boardType: project.boardType || 'kanban',
+            startDate: project.startDate ? new Date(project.startDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            endDate: project.endDate ? new Date(project.endDate).toISOString().split('T')[0] : ''
         });
         setShowModal(true);
     };
@@ -101,7 +107,9 @@ const Projects = () => {
             status: 'planning',
             priority: 'medium',
             color: '#6366f1',
-            boardType: 'kanban'
+            boardType: 'kanban',
+            startDate: new Date().toISOString().split('T')[0],
+            endDate: ''
         });
     };
 
@@ -547,6 +555,30 @@ const Projects = () => {
                                         <option value="high">High</option>
                                         <option value="critical">Critical</option>
                                     </select>
+                                </div>
+                            </div>
+                            <div className="form-row">
+                                <div className="form-group">
+                                    <label>Start Date</label>
+                                    <input
+                                        type="date"
+                                        className="input"
+                                        value={formData.startDate}
+                                        readOnly
+                                        disabled
+                                        style={{ backgroundColor: 'var(--bg-secondary)', cursor: 'not-allowed' }}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>End Date</label>
+                                    <input
+                                        type="date"
+                                        className="input"
+                                        value={formData.endDate}
+                                        onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                                        min={formData.startDate}
+                                        required
+                                    />
                                 </div>
                             </div>
                             <div className="form-group">

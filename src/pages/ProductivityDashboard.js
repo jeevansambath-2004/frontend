@@ -2,12 +2,22 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import productivityService from '../services/productivityService';
 import ActivityCalendar from '../components/ActivityCalendar';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import './ProductivityDashboard.css';
 
 const ProductivityDashboard = () => {
     const [leaderboard, setLeaderboard] = useState([]);
     const [activityData, setActivityData] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    const defaultEnd = new Date();
+    defaultEnd.setDate(defaultEnd.getDate() + 30);
+    const defaultEndStr = defaultEnd.toISOString().split('T')[0];
+
+    const [startDate, setStartDate] = useState(todayStr);
+    const [endDate, setEndDate] = useState(defaultEndStr);
 
     useEffect(() => {
         fetchData();
@@ -36,16 +46,67 @@ const ProductivityDashboard = () => {
         }
     };
 
+    const generatePDF = () => {
+        const doc = new jsPDF();
+        
+        doc.setFontSize(20);
+        doc.text('Productivity Progress Report', 14, 22);
+        
+        doc.setFontSize(11);
+        doc.setTextColor(100);
+        doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
+        
+        const totalTasks = leaderboard.reduce((sum, u) => sum + u.tasksCompleted, 0);
+        const totalPoints = leaderboard.reduce((sum, u) => sum + u.points, 0);
+        const activeMembers = leaderboard.length;
+
+        doc.setFontSize(14);
+        doc.setTextColor(0);
+        doc.text('Team Progress Summary', 14, 45);
+
+        doc.setFontSize(12);
+        doc.text(`Total Tasks Done: ${totalTasks}`, 14, 55);
+        doc.text(`Total SP Earned: ${totalPoints}`, 14, 62);
+        doc.text(`Active Members: ${activeMembers}`, 14, 69);
+
+        const tableColumn = ["Rank", "Employee", "Tasks Completed", "Story Points", "Last Active"];
+        const tableRows = [];
+
+        leaderboard.forEach(user => {
+            const userData = [
+                user.rank,
+                user.user?.name || 'Unknown User',
+                user.tasksCompleted,
+                user.points,
+                user.lastActiveDate ? new Date(user.lastActiveDate).toLocaleDateString() : '-'
+            ];
+            tableRows.push(userData);
+        });
+
+        autoTable(doc, {
+            head: [tableColumn],
+            body: tableRows,
+            startY: 80,
+            theme: 'grid',
+            headStyles: { fillColor: [99, 102, 241] }
+        });
+
+        doc.save(`Productivity_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+    };
+
     return (
         <div className="page productivity-dashboard">
             <Navbar />
             <main className="page-main dashboard-main">
                 <div className="container">
-                    <div className="page-header">
+                    <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
                             <h1>Productivity Dashboard</h1>
                             <p className="text-secondary">Track performance and activity across the team.</p>
                         </div>
+                        <button className="btn btn-primary" onClick={generatePDF}>
+                            📄 Generate Progress Report PDF
+                        </button>
                     </div>
 
                     {loading ? (
@@ -179,11 +240,32 @@ const ProductivityDashboard = () => {
                             </div>
 
                             <div className="dashboard-card calendar-card fade-in">
-                                <div className="card-header">
-                                    <h2>Your Activity Heatmap</h2>
-                                    <div className="badge-icon">📅</div>
+                                <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <h2>Your Activity Heatmap</h2>
+                                        <div className="badge-icon" style={{ marginLeft: '4px' }}>📅</div>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                        <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>From:</span>
+                                        <input 
+                                            type="date" 
+                                            className="input" 
+                                            value={startDate} 
+                                            onChange={(e) => setStartDate(e.target.value)} 
+                                            style={{ padding: '6px 10px', fontSize: '13px', minHeight: '32px' }}
+                                        />
+                                        <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>To:</span>
+                                        <input 
+                                            type="date" 
+                                            className="input" 
+                                            value={endDate} 
+                                            onChange={(e) => setEndDate(e.target.value)} 
+                                            min={startDate}
+                                            style={{ padding: '6px 10px', fontSize: '13px', minHeight: '32px' }}
+                                        />
+                                    </div>
                                 </div>
-                                <ActivityCalendar data={activityData} />
+                                <ActivityCalendar data={activityData} targetStartDate={startDate} targetEndDate={endDate} />
                             </div>
 
                         </div>

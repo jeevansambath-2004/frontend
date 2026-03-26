@@ -15,14 +15,14 @@ export const messageService = {
     },
 
     // Send a message
-    send: async (conversationId, content) => {
-        const response = await api.post(`/messages/${conversationId}`, { content });
+    send: async (conversationId, content, attachment = null, poll = null) => {
+        const response = await api.post(`/messages/${conversationId}`, { content, attachment, poll });
         return response.data;
     },
 
     // Start new conversation
-    startConversation: async (recipientId, content) => {
-        const response = await api.post('/messages/new', { recipientId, content });
+    startConversation: async (recipientId, content, attachment = null, poll = null) => {
+        const response = await api.post('/messages/new', { recipientId, content, attachment, poll });
         return response.data;
     },
 
@@ -41,6 +41,12 @@ export const messageService = {
     // Delete message
     delete: async (messageId) => {
         const response = await api.delete(`/messages/${messageId}`);
+        return response.data;
+    },
+
+    // Vote in poll
+    votePoll: async (messageId, optionId) => {
+        const response = await api.post(`/messages/${messageId}/vote`, { optionId });
         return response.data;
     },
 };
