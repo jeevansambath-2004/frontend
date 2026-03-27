@@ -61,8 +61,12 @@
     font-size: var(--text-sm);
     font-weight: 500;
     text-decoration: none;
-    transition: color var(--transition-fast);
+    transition: all var(--transition-fast);
     position: relative;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
 }
 
 .navbar-link::after {
