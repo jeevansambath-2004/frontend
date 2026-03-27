@@ -32,24 +32,6 @@
     gap: var(--spacing-3);
 }
 
-.project-filter {
-    padding: var(--spacing-3) var(--spacing-4);
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    color: var(--text-primary);
-    font-size: var(--text-sm);
-    min-width: 180px;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-}
-
-.project-filter:hover,
-.project-filter:focus {
-    border-color: var(--primary-500);
-    background: var(--bg-card-hover);
-}
-
 /* Role Indicator */
 .role-indicator {
     padding: 6px 14px;

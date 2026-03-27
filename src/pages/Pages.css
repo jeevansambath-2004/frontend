@@ -770,7 +770,7 @@
     padding: 3px 22px 3px 8px;
     font-size: 11px;
     font-weight: 600;
-    background: rgba(99, 102, 241, 0.1);
+    background: var(--bg-secondary);
     border: 1px solid rgba(99, 102, 241, 0.3);
     border-radius: var(--radius-md);
     color: var(--primary-400);
@@ -786,7 +786,7 @@
 }
 
 .member-status-select:hover {
-    background: rgba(99, 102, 241, 0.15);
+    background: var(--bg-tertiary);
     border-color: rgba(99, 102, 241, 0.5);
     color: var(--primary-300);
 }
@@ -796,7 +796,38 @@
 }
 
 .member-status-select option {
-    background: var(--bg-card);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+/* Shared Board Controls */
+.project-filter {
+    padding: var(--spacing-3) 36px var(--spacing-3) var(--spacing-4);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    color: var(--text-primary);
+    font-size: var(--text-sm);
+    min-width: 180px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23818cf8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 14px;
+}
+
+.project-filter:hover,
+.project-filter:focus {
+    border-color: var(--primary-500);
+    background-color: var(--bg-tertiary);
+    outline: none;
+}
+
+.project-filter option {
+    background: var(--bg-tertiary);
     color: var(--text-primary);
 }
 
