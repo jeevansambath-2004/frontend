@@ -49,6 +49,12 @@ export const messageService = {
         const response = await api.post(`/messages/${messageId}/vote`, { optionId });
         return response.data;
     },
+
+    // Toggle message reaction
+    reactToMessage: async (messageId, emoji) => {
+        const response = await api.post(`/messages/${messageId}/react`, { emoji });
+        return response.data;
+    },
 };
 
 export default messageService;

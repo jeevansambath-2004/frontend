@@ -6,6 +6,8 @@ import fileService from '../services/fileService';
 import { useAuth } from '../context/AuthContext';
 import './Messages.css';
 
+const COMMON_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🔥', '👏', '🎉', '✅', '❌'];
+
 const Messages = () => {
     const { user: currentUser } = useAuth();
     const [searchParams] = useSearchParams();
@@ -21,8 +23,10 @@ const Messages = () => {
     const [sending, setSending] = useState(false);
     
     const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [showPollModal, setShowPollModal] = useState(false);
     const [pollData, setPollData] = useState({ question: '', options: ['', ''] });
+    const [activeReactionMessage, setActiveReactionMessage] = useState(null);
     
     const messagesEndRef = useRef(null);
     const fileInputRef = useRef(null);
@@ -104,7 +108,6 @@ const Messages = () => {
     const handleSelectConversation = (conversation) => {
         setSelectedConversation(conversation);
         fetchMessages(conversation._id);
-        // On mobile, you might want to switch view
     };
 
     const handleAttachmentClick = (type) => {
@@ -159,6 +162,23 @@ const Messages = () => {
         }
     };
 
+    const handleReactToMessage = async (messageId, emoji) => {
+        try {
+            const res = await messageService.reactToMessage(messageId, emoji);
+            if (res.success) {
+                setMessages(prev => prev.map(m => m._id === messageId ? res.data : m));
+                setActiveReactionMessage(null);
+            }
+        } catch (error) {
+            console.error('Error reacting to message:', error);
+        }
+    };
+
+    const insertEmoji = (emoji) => {
+        setNewMessage(prev => prev + emoji);
+        setShowEmojiPicker(false);
+    };
+
     const handleFileSelect = (e) => {
         if (e.target.files && e.target.files[0]) {
             setAttachment(e.target.files[0]);
@@ -185,7 +205,6 @@ const Messages = () => {
                 setNewMessage('');
                 setAttachment(null);
                 if (fileInputRef.current) fileInputRef.current.value = '';
-                // Refresh conversations list to update last message preview
                 fetchConversations();
             }
         } catch (error) {
@@ -197,7 +216,6 @@ const Messages = () => {
         }
     };
 
-    // Helpers
     const formatTime = (dateString) => {
         const date = new Date(dateString);
         return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -210,7 +228,7 @@ const Messages = () => {
 
     const getMemberColor = (id) => {
         if (!id) return '#6b7280';
-        const colors = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#22c55e', '#14b8a6'];
+        const colors = ['#6366f1', '#8b5cf6', '#ec4899', '#ff8484', '#f97316', '#eab308', '#22c55e', '#14b8a6'];
         let hash = 0;
         const strId = id.toString();
         for (let i = 0; i < strId.length; i++) {
@@ -220,18 +238,16 @@ const Messages = () => {
     };
 
     const getConversationName = (conv) => {
-        if (conv.project) console.log(`Conv ${conv._id} Project:`, conv.project);
         if (conv.project?.name) return conv.project.name;
         if (conv.isGroup) return conv.name || 'Group Chat';
-        // For direct messages, find the other participant
         const myId = String(currentUser?.id || currentUser?._id || '');
         const other = conv.participants.find(p => String(p._id || p.id) !== myId);
         return other?.name || 'Unknown User';
     };
 
     const getConversationAvatar = (conv) => {
-        if (conv.project) return null; // Use project color/icon
-        if (conv.isGroup) return null; // Use group icon in UI
+        if (conv.project) return null;
+        if (conv.isGroup) return null;
         const myId = String(currentUser?.id || currentUser?._id || '');
         const other = conv.participants.find(p => String(p._id || p.id) !== myId);
         return other?.avatar;
@@ -241,7 +257,6 @@ const Messages = () => {
         <div className="page messages-page">
             <Navbar />
             <div className="messages-container">
-                {/* Sidebar */}
                 <div className={`messages-sidebar ${selectedConversation ? 'mobile-hidden' : ''}`}>
                     <div className="sidebar-header">
                         <h2>Messages</h2>
@@ -286,7 +301,6 @@ const Messages = () => {
                     )}
                 </div>
 
-                {/* Chat Area */}
                 <div className={`chat-area ${!selectedConversation ? 'mobile-hidden' : ''}`}>
                     {selectedConversation ? (
                         <>
@@ -314,15 +328,12 @@ const Messages = () => {
                                     </div>
                                 ) : (
                                     messages.map((message, index) => {
-                                        // Helper to safely get sender ID
                                         const getSenderId = (msg) => msg.sender?._id || msg.sender?.id || msg.sender;
                                         const senderId = getSenderId(message);
                                         const prevSenderId = index > 0 ? getSenderId(messages[index - 1]) : null;
 
-                                        // Helper to safely get sender name
                                         const getSenderName = (msg) => {
                                             if (msg.sender?.name) return msg.sender.name;
-                                            // Try to find in conversation participants
                                             const participant = selectedConversation?.participants?.find(p =>
                                                 String(p._id || p.id) === String(senderId)
                                             );
@@ -377,7 +388,7 @@ const Messages = () => {
                                                                         href={`${process.env.REACT_APP_API_URL?.replace('/api', '') || 'http://localhost:5000'}/uploads/${message.attachment.filename}`} 
                                                                         target="_blank" 
                                                                         rel="noopener noreferrer"
-                                                                        style={{ display: 'flex', alignItems: 'center', gap: '8px', color: isOwn ? 'white' : 'white', textDecoration: 'underline' }}
+                                                                        style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'white', textDecoration: 'underline' }}
                                                                     >
                                                                         📄 {message.attachment.originalName}
                                                                     </a>
@@ -391,9 +402,9 @@ const Messages = () => {
                                                                 <strong className="poll-question">📊 {message.poll.question}</strong>
                                                                 <div className="poll-options">
                                                                     {message.poll.options.map(opt => {
-                                                                        const totalVotes = message.poll.options.reduce((sum, o) => sum + o.votes.length, 0);
-                                                                        const pct = totalVotes > 0 ? Math.round((opt.votes.length / totalVotes) * 100) : 0;
-                                                                        const userVoted = opt.votes.some(v => String(v) === String(currentUserId) || String(v._id) === String(currentUserId));
+                                                                        const totalVotes = message.poll.options.reduce((sum, o) => sum + (o.votes?.length || 0), 0);
+                                                                        const pct = totalVotes > 0 ? Math.round(((opt.votes?.length || 0) / totalVotes) * 100) : 0;
+                                                                        const userVoted = opt.votes?.some(v => String(v._id || v) === String(currentUserId));
                                                                         return (
                                                                             <div 
                                                                                 key={opt._id} 
@@ -402,14 +413,55 @@ const Messages = () => {
                                                                             >
                                                                                 <div className="poll-option-progress" style={{ width: `${pct}%` }} />
                                                                                 <span className="poll-option-text">{opt.text}</span>
-                                                                                <span className="poll-option-meta">{opt.votes.length} ({pct}%)</span>
+                                                                                <span className="poll-option-meta">{opt.votes?.length || 0} ({pct}%)</span>
                                                                             </div>
                                                                         );
                                                                     })}
                                                                 </div>
                                                             </div>
                                                         )}
+                                                        
+                                                        <button 
+                                                            className="message-react-action"
+                                                            onClick={() => setActiveReactionMessage(activeReactionMessage === message._id ? null : message._id)}
+                                                        >
+                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                <circle cx="12" cy="12" r="10"></circle>
+                                                                <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                                                                <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                                                                <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                                                            </svg>
+                                                        </button>
+
+                                                        {activeReactionMessage === message._id && (
+                                                            <div className="reaction-picker-popup">
+                                                                {COMMON_EMOJIS.map(emoji => (
+                                                                    <button 
+                                                                        key={emoji} 
+                                                                        className="reaction-emoji-btn"
+                                                                        onClick={() => handleReactToMessage(message._id, emoji)}
+                                                                    >
+                                                                        {emoji}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        )}
                                                     </div>
+
+                                                    {message.reactions && message.reactions.length > 0 && (
+                                                        <div className={`message-reactions ${isOwn ? 'own' : 'other'}`}>
+                                                            {message.reactions.map(reaction => (
+                                                                <div 
+                                                                    key={reaction.emoji} 
+                                                                    className={`reaction-badge ${reaction.users.some(u => String(u._id || u) === String(currentUserId)) ? 'voted' : ''}`}
+                                                                    onClick={() => handleReactToMessage(message._id, reaction.emoji)}
+                                                                >
+                                                                    <span>{reaction.emoji}</span>
+                                                                    <span className="reaction-count">{reaction.users.length}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
                                                     <span className="message-time">
                                                         {formatTime(message.createdAt)}
                                                     </span>
@@ -421,21 +473,17 @@ const Messages = () => {
                                 <div ref={messagesEndRef} />
                             </div>
 
-                            {/* Message Input */}
-                            <div className="chat-input-container" style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}>
+                            <div className="chat-input-container">
                                 {attachment && (
-                                    <div className="attachment-preview" style={{ padding: '8px 15px', background: 'var(--bg-secondary)', borderTop: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--text-primary)' }}>
+                                    <div className="attachment-preview">
+                                        <div className="attachment-info">
                                             <span>📎</span>
-                                            <span style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                {attachment.name}
-                                            </span>
+                                            <span className="filename">{attachment.name}</span>
                                         </div>
-                                        <button className="btn-icon" onClick={() => { setAttachment(null); if(fileInputRef.current) fileInputRef.current.value = ''; }} style={{ padding: '4px' }}>✕</button>
+                                        <button className="remove-btn" onClick={() => { setAttachment(null); if(fileInputRef.current) fileInputRef.current.value = ''; }}>✕</button>
                                     </div>
                                 )}
-                                <form className="chat-input-form" onSubmit={handleSendMessage} style={{ display: 'flex', width: '100%', alignItems: 'center' }}>
-                                    
+                                <form className="chat-input-form" onSubmit={handleSendMessage}>
                                     <input 
                                         type="file" 
                                         ref={fileInputRef} 
@@ -469,18 +517,40 @@ const Messages = () => {
                                         </div>
                                     )}
 
+                                    <button 
+                                        type="button" 
+                                        className="btn-icon" 
+                                        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                                        title="Emoji"
+                                    >
+                                        😀
+                                    </button>
+
+                                    {showEmojiPicker && (
+                                        <div className="emoji-picker-container">
+                                            {COMMON_EMOJIS.map(emoji => (
+                                                <button 
+                                                    key={emoji} 
+                                                    className="emoji-btn"
+                                                    onClick={() => insertEmoji(emoji)}
+                                                >
+                                                    {emoji}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+
                                     <input
                                         type="text"
                                         className="chat-input"
                                         placeholder="Type a message..."
                                         value={newMessage}
                                         onChange={(e) => setNewMessage(e.target.value)}
-                                        style={{ flex: 1 }}
                                     />
 
                                     <button type="submit" className="chat-send-btn" disabled={sending} title="Send Message">
                                         {sending ? (
-                                            <div className="spinner-sm" style={{ borderTopColor: 'white' }}></div>
+                                            <div className="spinner-sm"></div>
                                         ) : (
                                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                 <line x1="22" y1="2" x2="11" y2="13"></line>
@@ -501,7 +571,6 @@ const Messages = () => {
                 </div>
             </div>
 
-            {/* Poll Modal */}
             {showPollModal && (
                 <div className="modal-overlay" onClick={() => setShowPollModal(false)}>
                     <div className="modal modal-sm" onClick={(e) => e.stopPropagation()}>
@@ -538,16 +607,18 @@ const Messages = () => {
                                                 <button className="btn-icon" onClick={() => {
                                                     const newOpts = pollData.options.filter((_, idx) => idx !== i);
                                                     setPollData({...pollData, options: newOpts});
-                                                }}>✕</button>
+                                                }} style={{ flexShrink: 0 }}>✕</button>
                                             )}
                                         </div>
                                     ))}
                                 </div>
                             </div>
                             {pollData.options.length < 10 && (
-                                <button className="btn btn-sm btn-ghost" onClick={() => setPollData({...pollData, options: [...pollData.options, '']})} style={{ marginTop: '8px', marginBottom: '16px' }}>
-                                    + Add Option
-                                </button>
+                                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                                    <button className="btn btn-sm btn-ghost poll-add-option-btn" onClick={() => setPollData({...pollData, options: [...pollData.options, '']})}>
+                                        + Add Option
+                                    </button>
+                                </div>
                             )}
                             <div className="modal-actions">
                                 <button className="btn btn-secondary" onClick={() => setShowPollModal(false)}>Cancel</button>

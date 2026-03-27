@@ -337,10 +337,21 @@
     border: 1px solid var(--border-color);
     border-radius: var(--radius-xl);
     width: 100%;
-    max-width: 500px;
+    max-width: 550px;
     max-height: 90vh;
     overflow-y: auto;
     animation: slideIn 0.3s ease;
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary-500) var(--bg-secondary);
+}
+
+.modal::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modal::-webkit-scrollbar-thumb {
+    background-color: var(--primary-500);
+    border-radius: 10px;
 }
 
 .modal-header {
@@ -352,6 +363,7 @@
     position: sticky;
     top: 0;
     background: var(--bg-secondary);
+    z-index: 10;
 }
 
 .modal-header h2 {
@@ -434,9 +446,13 @@
     display: flex;
     justify-content: flex-end;
     gap: var(--spacing-3);
-    padding-top: var(--spacing-4);
+    padding: var(--spacing-6);
     border-top: 1px solid var(--border-color);
     margin-top: var(--spacing-4);
+    position: sticky;
+    bottom: 0;
+    background: var(--bg-secondary);
+    z-index: 10;
 }
 
 /* Small Modal */
@@ -1108,4 +1124,144 @@
     background: var(--bg-tertiary);
     color: var(--text-primary);
     padding: 8px 12px;
+}
+
+/* Advanced Filter Tooltip Styles */
+.filter-container-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.filter-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: var(--spacing-3) var(--spacing-5);
+    font-weight: 600;
+    transition: all var(--transition-fast);
+}
+
+.filter-btn.active {
+    background: var(--primary-500);
+    color: white;
+    border-color: var(--primary-500);
+}
+
+.filter-dot {
+    width: 6px;
+    height: 6px;
+    background: #f59e0b;
+    border-radius: 50%;
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.8);
+}
+
+.filter-dropdown-content {
+    position: absolute;
+    top: calc(100% + 12px);
+    right: 0;
+    width: 280px;
+    background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-5);
+    z-index: 1000;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-5);
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.filter-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.filter-section label {
+    font-size: var(--text-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+}
+
+.filter-input {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 8px 12px;
+    color: var(--text-primary);
+    font-size: var(--text-sm);
+    transition: all var(--transition-fast);
+}
+
+.filter-input:focus {
+    outline: none;
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.filter-options {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 150px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.filter-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: var(--radius-md);
+    transition: background 0.2s;
+}
+
+.filter-checkbox:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.filter-checkbox input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-primary);
+    cursor: pointer;
+    appearance: none;
+    position: relative;
+    transition: all 0.2s;
+}
+
+.filter-checkbox input[type="checkbox"]:checked {
+    background: var(--primary-500);
+    border-color: var(--primary-500);
+}
+
+.filter-checkbox input[type="checkbox"]:checked::after {
+    content: '✓';
+    position: absolute;
+    color: white;
+    font-size: 12px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.filter-footer {
+    border-top: 1px solid var(--border-color);
+    padding-top: var(--spacing-4);
+    margin-top: var(--spacing-1);
 }

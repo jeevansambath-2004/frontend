@@ -41,6 +41,17 @@ const ScrumBoard = () => {
     const [projectRole, setProjectRole] = useState(null);
     const [pendingCount, setPendingCount] = useState(0);
 
+    // Filters state
+    const [showFilters, setShowFilters] = useState(false);
+    const [filters, setFilters] = useState({
+        search: '',
+        assignees: [],
+        priorities: [],
+        statuses: [],
+        storyPoints: [],
+        due: ''
+    });
+
     // Check if user is admin/owner
     const isProjectAdmin = user?.role === 'admin' || projectRole === 'owner' || projectRole === 'admin';
 
@@ -154,9 +165,64 @@ const ScrumBoard = () => {
         }
     };
 
+    // Filter logic helper
+    const applyFilters = (task) => {
+        // Search filter (Task Name)
+        if (filters.search && !task.title.toLowerCase().includes(filters.search.toLowerCase())) return false;
+        
+        // Assignee filter (Multiple)
+        if (filters.assignees.length > 0) {
+            const assigneeId = task.assignee?._id || task.assignee;
+            if (!filters.assignees.includes(assigneeId)) return false;
+        }
+        
+        // Priority filter (Multiple)
+        if (filters.priorities.length > 0 && !filters.priorities.includes(task.priority)) return false;
+        
+        // Status filter (Multiple)
+        if (filters.statuses.length > 0 && !filters.statuses.includes(task.status)) return false;
+        
+        // Story Points filter (Multiple)
+        if (filters.storyPoints.length > 0 && !filters.storyPoints.includes(task.storyPoints?.toString())) return false;
+        
+        // Due Date filter
+        if (filters.due && task.dueDate) {
+            const now = new Date();
+            const taskDate = new Date(task.dueDate);
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const taskDay = new Date(taskDate.getFullYear(), taskDate.getMonth(), taskDate.getDate());
+            
+            if (filters.due === 'overdue') {
+                if (taskDay >= today || task.status === 'done') return false;
+            } else if (filters.due === 'today') {
+                if (taskDay.getTime() !== today.getTime()) return false;
+            } else if (filters.due === 'thisWeek') {
+                const nextWeek = new Date(today);
+                nextWeek.setDate(today.getDate() + 7);
+                if (taskDay < today || taskDay > nextWeek) return false;
+            }
+        } else if (filters.due && !task.dueDate) {
+            return false;
+        }
+
+        return true;
+    };
+
+    const filteredSprintTasks = sprintTasks.filter(applyFilters);
+    const filteredBacklogTasks = backlogTasks.filter(applyFilters);
+
+    // Filter uniquely by current projects tasks assignees
+    const uniqueAssignees = Array.from(new Map([...sprintTasks, ...backlogTasks]
+        .filter(t => t.assignee)
+        .map(t => {
+            const id = t.assignee._id || t.assignee;
+            const name = t.assignee.name || 'Unknown User';
+            return [id, { _id: id, name }];
+        })).values());
+
     const getTasksByStatus = useCallback((status) => {
-        return sprintTasks.filter(task => task.status === status);
-    }, [sprintTasks]);
+        return filteredSprintTasks.filter(task => task.status === status);
+    }, [filteredSprintTasks]);
 
     const handleDragStart = (e, task) => {
         // Prevent dragging if task has pending approval (for members)
@@ -411,10 +477,10 @@ const ScrumBoard = () => {
 
     // Stats
     const getSprintStats = () => {
-        const total = sprintTasks.length;
-        const completed = sprintTasks.filter(t => t.status === 'done').length;
-        const totalPoints = sprintTasks.reduce((sum, t) => sum + (t.storyPoints || 0), 0);
-        const completedPoints = sprintTasks.filter(t => t.status === 'done')
+        const total = filteredSprintTasks.length;
+        const completed = filteredSprintTasks.filter(t => t.status === 'done').length;
+        const totalPoints = filteredSprintTasks.reduce((sum, t) => sum + (t.storyPoints || 0), 0);
+        const completedPoints = filteredSprintTasks.filter(t => t.status === 'done')
             .reduce((sum, t) => sum + (t.storyPoints || 0), 0);
 
         return { total, completed, totalPoints, completedPoints };
@@ -423,7 +489,7 @@ const ScrumBoard = () => {
     // Compute story points per member from sprint tasks
     const getMemberPoints = () => {
         const membersMap = {};
-        sprintTasks.forEach(task => {
+        filteredSprintTasks.forEach(task => {
             if (!task.assignee) return;
             const id = task.assignee._id || task.assignee;
             if (!membersMap[id]) {
@@ -483,6 +549,130 @@ const ScrumBoard = () => {
                             <p className="scrum-subtitle">Manage sprints and track team velocity</p>
                         </div>
                         <div className="scrum-header-right">
+                            <div className="filter-container-wrapper">
+                                <button 
+                                    className={`btn btn-secondary filter-btn ${showFilters ? 'active' : ''}`}
+                                    onClick={() => setShowFilters(!showFilters)}
+                                >
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                                        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                                    </svg>
+                                    Filters {Object.values(filters).some(f => Array.isArray(f) ? f.length > 0 : f !== '') && <span className="filter-dot"></span>}
+                                </button>
+                                
+                                {showFilters && (
+                                    <div className="filter-dropdown-content">
+                                        <div className="filter-section">
+                                            <label>Search Task</label>
+                                            <input 
+                                                type="text" 
+                                                placeholder="Task name..."
+                                                value={filters.search}
+                                                onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+                                                className="filter-input"
+                                            />
+                                        </div>
+
+                                        <div className="filter-section">
+                                            <label>Assigned To</label>
+                                            <div className="filter-options">
+                                                {uniqueAssignees.length > 0 ? (
+                                                    uniqueAssignees.map(user => (
+                                                        <label key={user._id} className="filter-checkbox">
+                                                            <input 
+                                                                type="checkbox"
+                                                                checked={filters.assignees.includes(user._id)}
+                                                                onChange={(e) => {
+                                                                    const newAssignees = e.target.checked 
+                                                                        ? [...filters.assignees, user._id]
+                                                                        : filters.assignees.filter(x => x !== user._id);
+                                                                    setFilters({ ...filters, assignees: newAssignees });
+                                                                }}
+                                                            />
+                                                            {user.name}
+                                                        </label>
+                                                    ))
+                                                ) : (
+                                                    <span className="no-filter-options">No assignees found</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="filter-section">
+                                            <label>Priority</label>
+                                            <div className="filter-options">
+                                                {['high', 'medium', 'low'].map(p => (
+                                                    <label key={p} className="filter-checkbox">
+                                                        <input 
+                                                            type="checkbox"
+                                                            checked={filters.priorities.includes(p)}
+                                                            onChange={(e) => {
+                                                                const newPriorities = e.target.checked 
+                                                                    ? [...filters.priorities, p]
+                                                                    : filters.priorities.filter(x => x !== p);
+                                                                setFilters({ ...filters, priorities: newPriorities });
+                                                            }}
+                                                        />
+                                                        {p.charAt(0).toUpperCase() + p.slice(1)}
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="filter-section">
+                                            <label>Story Points</label>
+                                            <div className="filter-options">
+                                                {['0', '1', '2', '3', '5', '8', '13'].map(sp => (
+                                                    <label key={sp} className="filter-checkbox">
+                                                        <input 
+                                                            type="checkbox"
+                                                            checked={filters.storyPoints.includes(sp)}
+                                                            onChange={(e) => {
+                                                                const newSP = e.target.checked 
+                                                                    ? [...filters.storyPoints, sp]
+                                                                    : filters.storyPoints.filter(x => x !== sp);
+                                                                setFilters({ ...filters, storyPoints: newSP });
+                                                            }}
+                                                        />
+                                                        {sp}
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="filter-section">
+                                            <label>Due Date</label>
+                                            <select 
+                                                className="filter-input"
+                                                value={filters.due}
+                                                onChange={(e) => setFilters({ ...filters, due: e.target.value })}
+                                            >
+                                                <option value="">Any time</option>
+                                                <option value="overdue">Overdue</option>
+                                                <option value="today">Due Today</option>
+                                                <option value="thisWeek">Due this week</option>
+                                            </select>
+                                        </div>
+
+                                        <div className="filter-footer">
+                                            <button 
+                                                className="btn btn-muted btn-sm"
+                                                onClick={() => setFilters({
+                                                    search: '',
+                                                    assignees: [],
+                                                    priorities: [],
+                                                    statuses: [],
+                                                    storyPoints: [],
+                                                    due: ''
+                                                })}
+                                            >
+                                                Reset Filters
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
                             <select
                                 className="project-filter"
                                 value={selectedProject || ''}
@@ -523,7 +713,7 @@ const ScrumBoard = () => {
                                         className={`toggle-btn ${view === 'backlog' ? 'active' : ''}`}
                                         onClick={() => setView('backlog')}
                                     >
-                                        📋 Backlog ({backlogTasks.length})
+                                        📋 Backlog ({filteredBacklogTasks.length})
                                     </button>
                                 </div>
                                 <div className="scrum-actions">
@@ -832,18 +1022,21 @@ const ScrumBoard = () => {
                                 <div className="backlog-section">
                                     <div className="backlog-header">
                                         <h2>Product Backlog</h2>
-                                        <span className="backlog-count">{backlogTasks.length} items</span>
+                                        <span className="backlog-count">{filteredBacklogTasks.length} items</span>
                                     </div>
-                                    {backlogTasks.length === 0 ? (
+                                    {filteredBacklogTasks.length === 0 ? (
                                         <div className="empty-backlog">
-                                            <p>No items in backlog. Create tasks to add to the backlog.</p>
-                                            <button className="btn btn-primary" onClick={() => openTaskModal()}>
-                                                + Add Task
-                                            </button>
+                                            <p>No tasks found in backlog matching filters.</p>
+                                            {/* Original button for adding task if backlog was empty, now only if no tasks match filters */}
+                                            {backlogTasks.length === 0 && (
+                                                <button className="btn btn-primary" onClick={() => openTaskModal()}>
+                                                    + Add Task
+                                                </button>
+                                            )}
                                         </div>
                                     ) : (
                                         <div className="backlog-list">
-                                            {backlogTasks.map(task => (
+                                            {filteredBacklogTasks.map(task => (
                                                 <div key={task._id} className={`backlog-item ${task.approvalStatus === 'pending' ? 'has-pending-approval' : ''}`}>
                                                     <div className="backlog-item-left">
                                                         <span className={`priority-dot priority-${task.priority}`}></span>
